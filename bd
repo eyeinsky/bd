@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# 'bd' runs your bash script (at $1, henceforth $scriptname)
+# while also sourcing its declared dependencies. These come
+# from:
+#
+#  - ${scriptname}.${suffix} (default ${script}.bd)
+#  - ~/.$suffix
+#  
+
+suffix=bd
+bhfile=~/.$suffix
+filter='$' # source all dependencies
+# filter='sh$' # source only dependencies with .sh suffix
+
+
+# debugging function
+
+if [[ "$DBG" = 1 ]]
+then dbg() { $@ >&2; }
+else if [[ "$DBG_FILE" != "" ]]
+   then dbg() { $@ >> "$DBG_FILE"; }
+        truncate --size 0 "$DBG_FILE"
+   else dbg() { :; }
+   fi
+fi
+
+{  
+   # cat global and local dependency files
+
+   if [ -f $bhfile ]; then
+      cat $bhfile
+      dbg echo "global dependencies listed in '$bhfile'"
+   fi
+   deps=${1%.*}.$suffix
+   if [ -f "$deps" ]
+      then cat $deps
+      dbg echo "local dependencies listed in '$deps'"
+   fi
+
+} | grep -vE '^ *#' | {
+   
+   # expand patterns in eval
+
+   while read pat; do
+      dbg echo "evaluating pattern '$pat'"
+      eval ls -1 "${pat// /\\ }" | while read f; do
+         dbg echo "which was expanded to '$f'"
+         echo $f; done
+   done
+
+} | grep -E "$filter" | {
+   
+   # source the deps
+
+   if [[ "$2" == '--pretend' ]]; then src=echo; else src=source; fi
+   while read file; do 
+      dbg echo "sourcing file '$file' with command '$src'"
+      $src "$file"
+   done
+
+   # finally, run the argument
+
+   $src $1
+}
