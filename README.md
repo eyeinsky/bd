@@ -6,7 +6,7 @@
 bd $script
 ```
 
-Prior to running the $scipt itself it will source
+Prior to running the scipt itself it will source
 patterns listed in both `${script}.bd`, `~/.bd`.
 
 You can get some info out of the process by doing
@@ -18,5 +18,5 @@ DBG=1 bd $script
 or 
    
 ```
-DBG=1 DBG_FILE=log bd $script
+DBG_FILE=log bd $script
 ```   
